@@ -1,4 +1,4 @@
 from ..api import api
-from ..views import StatusView
+from ..views import *
 
 api.add_resource(StatusView, '/status')
