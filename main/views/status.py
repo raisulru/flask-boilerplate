@@ -1,5 +1,6 @@
 from flask_restful import Resource
 from flask_http_response import success, result, error
+from main.tasks import test_task
 """from elasticsearch_dsl import Search
 """
 '''from main import es
@@ -8,6 +9,7 @@ from flask_http_response import success, result, error
 class StatusView(Resource):
     
     def get(self):
+        test_task.delay()
         return success.return_response('Hi this is flask boilerplate', 200)
 
 

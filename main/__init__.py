@@ -1,16 +1,26 @@
+import os
 from flask import Flask
-'''from flask_mongoengine import MongoEngine
+'''
+from flask_mongoengine import MongoEngine
 from flask_sqlalchemy import SQLAlchemy
-from elasticsearch import Elasticsearch'''
+from elasticsearch_dsl.connections import connections
+'''
 from flask_sqlalchemy import SQLAlchemy
 
 from config import Config
-from .celery import make_celery
-'''db = MongoEngine()
+from celery import Celery
+from dotenv import load_dotenv
+
+load_dotenv()
+
+'''
+db = MongoEngine()
 db = SQLAlchemy()
-es = Elasticsearch(host=Config.ELASTICSEARCH_HOST)'''
+es = connections.create_connection(hosts=[Config.ELASTICSEARCH_HOST])
+'''
 
 db = SQLAlchemy()
+celery = Celery(__name__, broker=Config.broker_url)
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -35,10 +45,17 @@ def create_app(config_class=Config):
 
 
 app = create_app(Config)
+celery.conf.update(app.config)
 
-celery = make_celery(app=app)
 celery.autodiscover_tasks(
     ['main.tasks'], 
     related_name='tasks', 
     force=True
 )
+
+celery.conf.beat_schedule = {
+    'schedule-task': {
+        'task': 'main.tasks.schedule_task',
+        'schedule': int(os.getenv('TEST_SCHEDULE_TIME_IN_SECONDS'))
+    }
+}
